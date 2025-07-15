@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio Allocation App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, button {
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: calc(100% - 22px);
+        }
+        button {
+            background-color: #1a73e8;
+            color: white;
+            border: none;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #1557b0;
+        }
+        #add-asset-btn, #reset-btn {
+            width: auto;
+            padding: 10px 20px;
+        }
+        .asset-item {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .asset-item input {
+            width: 45%;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            display: none;
+        }
+        #error {
+            color: red;
+            margin-top: 10px;
+            display: none;
+        }
+        @media (max-width: 600px) {
+            .asset-item {
+                flex-direction: column;
+            }
+            .asset-item input {
+                width: calc(100% - 22px);
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Portfolio Allocation App</h1>
+    <div class="container">
+        <div class="input-group">
+            <label for="cash-position">Total Cash Position (€):</label>
+            <input type="number" id="cash-position" placeholder="Enter your cash position (e.g., 10000)" min="0">
+        </div>
+        <div class="input-group">
+            <label>Add Asset:</label>
+            <div class="asset-item">
+                <input type="text" class="asset-name" placeholder="Asset (e.g., SUI)">
+                <input type="number" class="asset-percent" placeholder="Percentage (e.g., 50)" min="0" max="100">
+            </div>
+            <button id="add-asset-btn">Add Another Asset</button>
+        </div>
+        <button id="calculate-btn">Calculate Allocation</button>
+        <button id="reset-btn">Reset</button>
+        <div id="error"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const assetList = document.getElementById('asset-list') || document.createElement('div');
+        assetList.id = 'asset-list';
+        document.querySelector('.input-group:last-of-type').appendChild(assetList);
+
+        document.getElementById('add-asset-btn').addEventListener('click', () => {
+            const assetItem = document.createElement('div');
+            assetItem.className = 'asset-item';
+            assetItem.innerHTML = `
+                <input type="text" class="asset-name" placeholder="Asset (e.g., SUI)">
+                <input type="number" class="asset-percent" placeholder="Percentage (e.g., 50)" min="0" max="100">
+            `;
+            assetList.appendChild(assetItem);
+        });
+
+        document.getElementById('calculate-btn').addEventListener('click', () => {
+            const cashPosition = parseFloat(document.getElementById('cash-position').value);
+            const errorDiv = document.getElementById('error');
+            const resultDiv = document.getElementById('result');
+
+            if (!cashPosition || cashPosition <= 0) {
+                errorDiv.textContent = 'Please enter a valid cash position.';
+                errorDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
+                return;
+            }
+
+            const assets = [];
+            const assetItems = document.querySelectorAll('.asset-item');
+            let totalPercent = 0;
+
+            assetItems.forEach(item => {
+                const name = item.querySelector('.asset-name').value.trim();
+                const percent = parseFloat(item.querySelector('.asset-percent').value);
+                if (name && percent >= 0) {
+                    assets.push({ name, percent });
+                    totalPercent += percent;
+                }
+            });
+
+            if (assets.length === 0) {
+                errorDiv.textContent = 'Please add at least one asset with a valid name and percentage.';
+                errorDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
+                return;
+            }
+
+            if (Math.abs(totalPercent - 100) > 0.01) {
+                errorDiv.textContent = `Percentages must sum to 100%. Current total: ${totalPercent.toFixed(2)}%`;
+                errorDiv.style.display = 'block';
+                resultDiv.style.display = 'none';
+                return;
+            }
+
+            errorDiv.style.display = 'none';
+            let resultHTML = `<h3>Portfolio Allocation for €${cashPosition.toFixed(2)}</h3><ul>`;
+            assets.forEach(asset => {
+                const allocation = (asset.percent / 100) * cashPosition;
+                resultHTML += `<li><strong>${asset.name}</strong>: ${asset.percent}% = €${allocation.toFixed(2)}</li>`;
+            });
+            resultHTML += '</ul>';
+            resultDiv.innerHTML = resultHTML;
+            resultDiv.style.display = 'block';
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            document.getElementById('cash-position').value = '';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('result').style.display = 'none';
+            assetList.innerHTML = `
+                <div class="asset-item">
+                    <input type="text" class="asset-name" placeholder="Asset (e.g., SUI)">
+                    <input type="number" class="asset-percent" placeholder="Percentage (e.g., 50)" min="0" max="100">
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>
